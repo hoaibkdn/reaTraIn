@@ -55,13 +55,15 @@ const List = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
-
-    startTransition(() => {
-      const results = list.filter((item: any) =>
-        item.description.toLowerCase().includes(value.toLowerCase())
-      );
-      setFiltered(results);
-    });
+    const results = list.filter((item: any) =>
+      item.description.toLowerCase().includes(value.toLowerCase())
+    );
+    setFiltered(results);
+    // startTransition(() => {
+    //   const results = list.filter((item: any) =>
+    //     item.description.toLowerCase().includes(value.toLowerCase())
+    //   );
+    // });
   };
 
   // const filtered2 = list.filter((item) =>
@@ -77,16 +79,49 @@ const List = () => {
       const fetch2 = fetch("https://dummyjson.com/users?limit=200");
       const response = await fetch1;
       const response2 = await fetch2;
+
+      //  Promise.all([
+      //   fetch("https://dummyjson.com/products?limit=200"),
+      //   fetch("https://dummyjson.com/users2?limit=200")
+      // ]).then(([productsRes, usersRes]) => {
+      //   return Promise.all([productsRes.json(), usersRes.json()])
+      // })
+      // .catch((error) => {
+      //   console.log("error ", error);
+      // });
+
+      // Promiss allSettled
+      // Promise.allSettled([
+      //   fetch("https://dummyjson.com/products?limit=200"),
+      //   fetch("https://dummyjson.com/users1?limit=200"),
+      // ])
+      //   .then((results) => {
+      //     return Promise.allSettled(
+      //       results.map((r) =>
+      //         r.status === "fulfilled"
+      //           ? r.value.json()
+      //           : Promise.reject(r.reason)
+      //       )
+      //     );
+      //   })
+      //   .then((parsedResults) => {
+      //     console.log("parsedResults ", parsedResults);   
+      //   })
+      //   .catch((err) => {
+      //     console.error("Cached Error:", err);
+      //   });
+
       // const response = await fetch("https://dummyjson.com/products?limit=200");
       // const response2 = await fetch("https://dummyjson.com/users?limit=200");
       const data = await response.json();
       const data2 = await response2.json();
       const newList = [
+        // ...data.products.slice(0,10),
         ...data.products,
-        ...data.products,
-        ...data.products,
-        ...data.products,
-        ...data.products,
+        // ...data.products,
+        // ...data.products,
+        // ...data.products,
+        // ...data.products,
       ];
       console.log("newList ", newList.length);
       setList(newList);
@@ -125,6 +160,19 @@ const List = () => {
     };
   }, []);
 
+  const handleAddItem = () => {
+    setUsers((prev) => [
+      { id: prev.length + 1, firstName: "Item " + (prev.length + 1) },
+      ...prev,
+    ]);
+    setFiltered((prev) => [
+      { id: prev.length + 1, title: "Item " + (prev.length + 1) },
+      ...prev,
+    ]);
+    // console.log("users --- ", users);
+    console.log("list --- ", list);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center gap-2">
       {/* <h1>List</h1> */}
@@ -136,6 +184,12 @@ const List = () => {
       {/* <button onClick={() => modalRef.current?.open()}>Open Modal</button>
       <button onClick={() => modalRef.current?.close()}>Close Modal</button> */}
       <button onClick={() => setUsers([])}>Search</button>
+      <button
+        className="bg-blue-500 text-white p-2 rounded-md"
+        onClick={() => handleAddItem()}
+      >
+        Add item
+      </button>
       <input
         value={query}
         onChange={handleChange}
@@ -151,7 +205,7 @@ const List = () => {
       <RAFAnimation /> */}
       {filtered.map((item: any, index) => (
         <Item
-          key={index}
+          key={item.id}
           item={item}
           itemRef={setItemRef(index)}
           user={users[index]}
@@ -182,7 +236,7 @@ const Item = memo(
             {item.id} - {item.title}
           </h2>
           <p>{item.description}</p>
-          <img className="w-30 h-30" src={item.images[0]} alt={item.title} />
+          <img className="w-30 h-30" src={item.images?.[0]} alt={item.title} />
           <div className="flex items-center justify-between gap-2">
             {user && (
               <div className="flex items-center gap-2 w-1/2">
