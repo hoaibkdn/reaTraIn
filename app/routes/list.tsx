@@ -80,7 +80,43 @@ const List = () => {
       const response = await fetch1;
       const response2 = await fetch2;
 
-      //  Promise.all([
+      Promise.any([
+        fetch("https://dummyjson.com/products?limit=200"), 
+        fetch("https://dummyjson.com/users?limit=200"),   
+      ])
+        .then(res => res.json())
+        .then(data => console.log("Any result:", data))
+        .catch(err => console.error("All failed:", err.errors));
+
+      // ----------------------------
+      // const timeout = (ms) =>
+      //   new Promise((_, reject) =>
+      //     setTimeout(() => reject(new Error("⏰ Timeout!")), ms)
+      //   );
+      
+      // Promise.race([
+      //   fetch("https://dummyjson.com/products?limit=200"),
+      //   timeout(2000),
+      // ])
+      //   .then((res) => res.json())
+      //   .then((data) => console.log("Data:", data))
+      //   .catch((err) => console.error("Error:", err.message));
+
+      // ----------------------------
+      // Promise.race([
+      //   fetch("https://dummyjson.com/products?limit=200"),
+      //   fetch("https://dummyjson.com/users?limit=200"),
+      // ])
+      //   .then((res) => res.json())
+      //   .then((data) => {
+      //     console.log("First response wins:", data);
+      //   })
+      //   .catch((err) => {
+      //     console.error(" First error:", err);
+      //   });
+
+      // ---------------------------- 
+      // Promise.all([
       //   fetch("https://dummyjson.com/products?limit=200"),
       //   fetch("https://dummyjson.com/users2?limit=200")
       // ]).then(([productsRes, usersRes]) => {
@@ -90,6 +126,7 @@ const List = () => {
       //   console.log("error ", error);
       // });
 
+      // ------------------------------
       // Promiss allSettled
       // Promise.allSettled([
       //   fetch("https://dummyjson.com/products?limit=200"),
@@ -105,7 +142,7 @@ const List = () => {
       //     );
       //   })
       //   .then((parsedResults) => {
-      //     console.log("parsedResults ", parsedResults);   
+      //     console.log("parsedResults ", parsedResults);
       //   })
       //   .catch((err) => {
       //     console.error("Cached Error:", err);
