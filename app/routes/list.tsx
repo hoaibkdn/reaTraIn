@@ -1,16 +1,12 @@
 import {
-  useCallback,
   useState,
   memo,
   createContext,
-  useMemo,
   useContext,
-  useId,
   useRef,
   useEffect,
   useImperativeHandle,
   forwardRef,
-  useTransition,
 } from "react";
 import useList from "../hooks/useList";
 import useScroll from "../hooks/useScroll";
@@ -19,9 +15,12 @@ const UserContext = createContext({});
 const UserStateContext = createContext({});
 const UserDispatchContext = createContext({});
 
+
+// List page
 const List = () => {
   const [count, setCount] = useState(0);
   const { itemsRef, scrollToItem } = useScroll();
+  const inputRef = useRef<HTMLInputElement>(null);
   const { query, filtered, isPending, handleChange } = useList(
     "https://dummyjson.com/products?limit=200"
   );
@@ -39,9 +38,16 @@ const List = () => {
         value={query}
       />
 
-      {/* <button onClick={() => {  console.log('inputRef.current ', inputRef.current); }}>Focus</button>
+      <button
+        onClick={() => {
+          console.log("inputRef.current ", inputRef.current);
+        }}
+      >
+        Focus
+      </button>
       <button onClick={() => inputRef.current?.clear()}>Clear</button>
-      <Animation /> */}
+      <CustomInput ref={inputRef} />
+      <Animation />
       {isPending && <div>Loading...</div>}
       {filtered.map((item: any, index: number) => (
         <div
@@ -62,13 +68,22 @@ const List = () => {
 
 export default List;
 
+
+// Context
 const MainPage = memo(() => {
+  const [user, setUser] = useState({ name: "John" });
   return (
-    <>
-      <Header />
-      <Sidebar />
-      <Content />
-    </>
+    <UserStateContext.Provider value={user}>
+      <UserDispatchContext.Provider
+        value={{
+          setUser,
+        }}
+      >
+        <Header />
+        <Sidebar />
+        <Content />
+      </UserDispatchContext.Provider>
+    </UserStateContext.Provider>
   );
 });
 
@@ -91,7 +106,6 @@ const Content = memo(() => {
 function ButtonTurning() {
   const redButtonRef = useRef<HTMLButtonElement | null>(null);
   const changeColor = () => {
-    console.log("changeColor ");
     if (redButtonRef.current) {
       redButtonRef.current.style.color = "red";
     }
@@ -99,54 +113,14 @@ function ButtonTurning() {
   const triggerRedButton = () => {
     console.log("redButtonRef.current ", redButtonRef.current);
     if (redButtonRef.current) {
-      // Method 1: Try mouseover instead of mouseenter
-      // mouseover bubbles and might be caught by React's delegation
-      // const mouseoverEvent = new MouseEvent("mouseover", {
-      //   bubbles: true,
-      //   cancelable: true,
-      //   view: window,
-      //   clientX: 0,
-      //   clientY: 0,
-      // });
-      
-      // console.log("Dispatching mouseover event");
-      // const dispatched = redButtonRef.current.dispatchEvent(mouseoverEvent);
-      // console.log("Mouseover event dispatched:", dispatched);
-      
-      // // Method 2: Try mouseenter with different approach
-      // const mouseenterEvent = new MouseEvent("mouseenter", {
-      //   bubbles: true,
-      //   cancelable: true,
-      //   view: window,
-      //   clientX: 0,
-      //   clientY: 0,
-      // });
-      
-      // console.log("Dispatching mouseenter event");
-      // const dispatched2 = redButtonRef.current.dispatchEvent(mouseenterEvent);
-      // console.log("Mouseenter event dispatched:", dispatched2);
-      
-      // // Method 3: Force trigger by simulating mouse movement
-      // // Create a mouseout event first, then mouseenter
-      // const mouseoutEvent = new MouseEvent("mouseout", {
-      //   bubbles: true,
-      //   cancelable: true,
-      //   view: window,
-      // });
-      
-      // redButtonRef.current.dispatchEvent(mouseoutEvent);
-      
-      // Small delay then mouseenter
-      setTimeout(() => {
-        const delayedMouseenter = new MouseEvent("mouseenter", {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          clientX: 0,
-          clientY: 0,
-        });
-        redButtonRef.current?.dispatchEvent(delayedMouseenter);
-      }, 100);
+      const delayedMouseover = new MouseEvent("mouseover", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: 0,
+        clientY: 0,
+      });
+      redButtonRef.current?.dispatchEvent(delayedMouseover);
     }
   };
   return (
@@ -166,6 +140,7 @@ function ButtonTurning() {
   );
 }
 
+// Ref reserve previous value
 function Counter({ value }: { value: number }) {
   const prevValue = useRef<number | null>(null);
 
@@ -181,6 +156,7 @@ function Counter({ value }: { value: number }) {
   );
 }
 
+// Animation with ref
 function Animation() {
   const frameRef = useRef<number | null>(null);
   const [position, setPosition] = useState(0);
@@ -224,17 +200,18 @@ function Animation() {
   );
 }
 
+// useImperativeHandle
 const CustomInput = forwardRef((props, ref) => {
-  // const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // useImperativeHandle(ref, () => ({
-  //     focus: () => inputRef.current?.focus(),
-  //     clear: () => (inputRef.current!.value = ""),
-  // }));
+  useImperativeHandle(ref, () => ({
+    focus: () => inputRef.current?.focus(),
+    clear: () => (inputRef.current!.value = ""),
+  }));
   return (
     <input
       className="border-2 border-gray-300 rounded-md p-2"
-      ref={ref as Ref<HTMLInputElement>}
+      ref={ref as React.RefObject<HTMLInputElement>}
       {...props}
     />
   );
