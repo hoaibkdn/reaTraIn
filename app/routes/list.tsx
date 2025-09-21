@@ -15,12 +15,11 @@ const UserContext = createContext({});
 const UserStateContext = createContext({});
 const UserDispatchContext = createContext({});
 
-
 // List page
 const List = () => {
   const [count, setCount] = useState(0);
   const { itemsRef, scrollToItem } = useScroll();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<{ focus: () => void; clear: () => void }>(null);
   const { query, filtered, isPending, handleChange } = useList(
     "https://dummyjson.com/products?limit=200"
   );
@@ -28,46 +27,46 @@ const List = () => {
   return (
     <>
       <ButtonTurning />
-      <button onClick={() => setCount(count + 1)}>Count: {count}</button>
-      <button onClick={() => scrollToItem(10)}>Scroll to Item 10</button>
-      <Counter value={count} />
-
-      <input
-        className="border-2 border-gray-300 rounded-md p-2"
-        onChange={handleChange}
-        value={query}
-      />
-
-      <button
-        onClick={() => {
-          console.log("inputRef.current ", inputRef.current);
-        }}
-      >
-        Focus
-      </button>
-      <button onClick={() => inputRef.current?.clear()}>Clear</button>
-      <CustomInput ref={inputRef} />
       <Animation />
-      {isPending && <div>Loading...</div>}
-      {filtered.map((item: any, index: number) => (
-        <div
-          key={index}
-          ref={(el) => {
-            if (el) {
-              itemsRef.current[index] = el;
-            }
+      <div className="flex flex-col gap-2 mt-50 items-center">
+        <button onClick={() => setCount(count + 1)}>Count: {count}</button>
+        <button onClick={() => scrollToItem(10)}>Scroll to Item 10</button>
+        <Counter value={count} />
+        
+        <CustomInput ref={inputRef} />
+        <button
+          onClick={() => {
+            inputRef.current?.focus();
           }}
         >
-          <p>{item.title}</p>
-          <img className="w-50 h-50" src={item.images[0]} alt={item.title} />
-        </div>
-      ))}
+          Focus
+        </button>
+        <button onClick={() => inputRef.current?.clear()}>Clear</button>
+        <input
+          className="border-2 border-gray-300 rounded-md p-2 w-1/4"
+          onChange={handleChange}
+          value={query}
+        />
+        {isPending && <div>Loading...</div>}
+        {filtered.map((item: any, index: number) => (
+          <div
+            key={index}
+            ref={(el) => {
+              if (el) {
+                itemsRef.current[index] = el;
+              }
+            }}
+          >
+            <p>{item.title}</p>
+            <img className="w-50 h-50" src={item.images[0]} alt={item.title} />
+          </div>
+        ))}
+      </div>
     </>
   );
 };
 
 export default List;
-
 
 // Context
 const MainPage = memo(() => {
@@ -124,19 +123,22 @@ function ButtonTurning() {
     }
   };
   return (
-    <>
-      <button className="bg-purple-500" onClick={triggerRedButton}>
+    <div className="mt-4 mb-2">
+      <button
+        className="bg-purple-500 p-2 rounded-md"
+        onClick={triggerRedButton}
+      >
         Trigger Red Button
       </button>
       <button
         ref={redButtonRef}
-        className="bg-green-500"
+        className="bg-green-500 p-2 rounded-md"
         onClick={changeColor}
         onMouseEnter={changeColor}
       >
         Red Button
       </button>
-    </>
+    </div>
   );
 }
 
@@ -210,8 +212,8 @@ const CustomInput = forwardRef((props, ref) => {
   }));
   return (
     <input
-      className="border-2 border-gray-300 rounded-md p-2"
-      ref={ref as React.RefObject<HTMLInputElement>}
+      className="border-2 border-gray-300 rounded-md p-2 w-1/4"
+      ref={inputRef}
       {...props}
     />
   );
