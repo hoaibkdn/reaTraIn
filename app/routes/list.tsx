@@ -45,7 +45,7 @@ const reducer = (state: { count: number; list: any[] }, action: any) => {
 
 const List = () => {
   const [list, setList] = useState<any[]>([]);
-  const [state, dispatch] = useReducer(reducer, initialState, init);
+  const [count, setCount] = useState(0);
   const [query, setQuery] = useState("");
   const [filtered, setFiltered] = useState(list);
   const [isPending, startTransition] = useTransition();
@@ -56,12 +56,12 @@ const List = () => {
     const value = e.target.value;
     setQuery(value);
 
-    startTransition(() => {
-      const results = list.filter((item: any) =>
-        item.description.toLowerCase().includes(value.toLowerCase())
-      );
-      setFiltered(results);
-    });
+    // startTransition(() => {
+    const results = list.filter((item: any) =>
+      item.description.toLowerCase().includes(value.toLowerCase())
+    );
+    setFiltered(results);
+    // });
   };
 
   // const filtered2 = list.filter((item) =>
@@ -73,27 +73,26 @@ const List = () => {
 
   useEffect(() => {
     async function fetchList() {
-      const fetch1 = fetch("https://dummyjson.com/products?limit=200");
-      const fetch2 = fetch("https://dummyjson.com/users?limit=200");
-      const response = await fetch1;
+      const fetch1 = fetch("https://dummyjson.com/products?limit=200"); // Promise // 200ms
+      const fetch2 = fetch("https://dummyjson.com/users?limit=200"); // Promise // 180ms
+      const response = await fetch1; // 200ms
       const response2 = await fetch2;
-      // const response = await fetch("https://dummyjson.com/products?limit=200");
-      // const response2 = await fetch("https://dummyjson.com/users?limit=200");
       const data = await response.json();
       const data2 = await response2.json();
+
       const newList = [
         ...data.products,
-        ...data.products,
-        ...data.products,
-        ...data.products,
-        ...data.products,
+        // ...data.products,
+        // ...data.products,
+        // ...data.products,
+        // ...data.products,
       ];
       console.log("newList ", newList.length);
-      setList(newList);
+      // setList(newList);
       setUsers(data2.users);
       setFiltered(newList);
       // dispatch({ type: "addItem", item: data.products });
-      dispatch({ type: "increment", count: data.products.length });
+      // dispatch({ type: "increment", count: data.products.length });
       // setCount((prev) => prev + data.products.length);
     }
     fetchList();
@@ -112,23 +111,44 @@ const List = () => {
     await fetchList();
   };
 
-  const scrollToItem = (index: number) => {
+  const scrollToItem = useCallback((index: number) => {
     itemsRef.current[index]?.scrollIntoView({
       behavior: "smooth",
       block: "center",
     });
-  };
+  }, []);
 
-  const setItemRef = useCallback((itemId: number) => {
-    return (el: HTMLDivElement | null) => {
-      if (el) itemsRef.current[itemId] = el;
-    };
+  const itemRefs = useRef<Map<number, (el: HTMLDivElement | null) => void>>(
+    new Map()
+  );
+
+  // const setItemRef = useCallback((itemId: number) => {
+  //   if (!itemRefs.current.has(itemId)) {
+  //     itemRefs.current.set(itemId, (el: HTMLDivElement | null) => {
+  //       if (el) itemsRef.current[itemId] = el;
+  //     });
+  //   }
+  //   return itemRefs.current.get(itemId)!;
+  // }, []);
+
+  const addItem = useCallback(() => {
+    setUsers((prev: any[]) => [
+      { id: prev.length + 1, firstName: "Item " + (prev.length + 1) },
+      ...prev,
+    ]);
+    setFiltered((prev: any[]) => [
+      { id: prev.length + 1, title: "Item " + (prev.length + 1) },
+      ...prev,
+    ]);
   }, []);
 
   return (
     <div className="flex flex-col items-center justify-center gap-2">
       {/* <h1>List</h1> */}
-      {/* <button onClick={handleFetchList}>Count: {count}</button> */}
+      <button onClick={() => setCount((prev) => prev + 1)}>
+        Count: {count}
+      </button>
+      <button onClick={addItem}>Add Item</button>
       {/* <button onClick={() => dispatch({ type: "increment" })}>
         Count: {state.count} {list.length}
       </button>
@@ -151,10 +171,11 @@ const List = () => {
       <RAFAnimation /> */}
       {filtered.map((item: any, index) => (
         <Item
-          key={index}
+          key={item.id}
           item={item}
-          itemRef={setItemRef(index)}
+          // itemRef={setItemRef(index)}
           user={users[index]}
+          scrollToItem={scrollToItem}
         />
       ))}
     </div>
@@ -164,25 +185,29 @@ const List = () => {
 const Item = memo(
   ({
     item,
-    itemRef,
+    // itemRef,
     user,
+    // scrollToItem,
   }: {
     item: any;
-    itemRef: (el: HTMLDivElement | null) => void;
+    // itemRef: (el: HTMLDivElement | null) => void;
     user: any;
+    scrollToItem: (index: number) => void;
   }) => {
     // console.log("item ", item);
     return (
       <>
         <div
-          ref={itemRef}
+          // ref={itemRef}
           className="flex flex-col items-left justify-center gap-2 border-2 border-gray-300 p-2 rounded-md w-1/2"
         >
           <h2 className="text-2xl font-bold">
             {item.id} - {item.title}
           </h2>
           <p>{item.description}</p>
-          <img className="w-30 h-30" src={item.images[0]} alt={item.title} />
+          {/* {item.images?.[0] && (
+            <img className="w-30 h-30" src={item.images[0]} alt={item.title} />
+          )} */}
           <div className="flex items-center justify-between gap-2">
             {user && (
               <div className="flex items-center gap-2 w-1/2">
@@ -209,11 +234,6 @@ const Item = memo(
         </div>
       </>
     );
-  },
-  (prevProps, nextProps) => {
-    // console.log("prevProps ", prevProps);
-    // console.log("nextProps ", nextProps);
-    return prevProps.item.id === nextProps.item.id;
   }
 );
 
