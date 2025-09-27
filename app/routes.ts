@@ -6,4 +6,5 @@ export default [
   route("/test", "routes/test.tsx"),
   route("/list", "routes/list.tsx"),
   route("/memohook", "routes/memohook.tsx"),
+  route("/main", "routes/main.tsx"),
 ] satisfies RouteConfig;

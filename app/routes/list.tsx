@@ -18,6 +18,7 @@ import {
   InfiniteLoader,
 } from "react-virtualized";
 import LazyImage from "../components/LazyImage";
+import { useUsers } from "~/hooks/useUsers";
 
 // const initialState = {
 //   count: 0,
@@ -38,6 +39,8 @@ const List = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [countLimit, setCountLimit] = useState(1);
+  const { data, error, isLoading } = useUsers();
+  console.log("data users ", data);
   // const deferredQuery = useDeferredValue(query);
 
   // const [rows, setRows] = useState(
