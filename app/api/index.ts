@@ -16,4 +16,11 @@ const apiObject = axios.create({
   },
 });
 
-export { apiClient, apiObject };
+const apiProducts = axios.create({
+  baseURL: "https://dummyjson.com",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export { apiClient, apiObject, apiProducts };

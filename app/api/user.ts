@@ -1,7 +1,9 @@
-import { apiClient } from ".";
+import { apiClient, apiProducts } from ".";
 
-async function fetchUsers() {
-  const { data } = await apiClient.get(`/users`);
+async function fetchUsers({ signal }: { signal: AbortSignal }) {
+  console.log("fetchUsers signal ", signal);
+  // await new Promise(r => setTimeout(r, 2000));
+  const { data } = await apiProducts.get(`/users1?limit=2000`);
   return data;
 }
 

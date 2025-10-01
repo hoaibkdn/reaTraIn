@@ -3,6 +3,7 @@ import {
   useQueries,
   useQuery,
   useQueryClient,
+  useSuspenseQuery,
 } from "@tanstack/react-query";
 import { addUser, fetchUserDetails, fetchUsers } from "../api/user";
 
@@ -11,11 +12,21 @@ export const usersKeys = {
   details: (id: string) => [...usersKeys.all, id],
 };
 
+// export const useUsers = () => {
+//   return useQuery({
+//     queryKey: usersKeys.all,
+//     queryFn: ({ signal }) => fetchUsers({ signal }),
+//     staleTime: 5 * 60,
+//     // refetchInterval: 30000, // poll every 30s
+//     // refetchIntervalInBackground: true, // keep polling even if tab inactive
+//   });
+// };
+
 export const useUsers = () => {
-  return useQuery({
+  return useSuspenseQuery({
     queryKey: usersKeys.all,
     queryFn: fetchUsers,
-    staleTime: 1000 * 60 * 5,
+    // retry: false,
   });
 };
 
@@ -54,16 +65,16 @@ export const useAddUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: addUser,
-    onMutate: async (newUser) => {
-      await queryClient.cancelQueries({ queryKey: usersKeys.all });
-      const prevUsers = queryClient.getQueryData(usersKeys.all);
-      queryClient.setQueryData(usersKeys.all as any, (old: any) => [
-        ...old,
-        newUser,
-      ]);
+    // onMutate: async (newUser) => {
+    //   // await queryClient.cancelQueries({ queryKey: usersKeys.all });
+    //   const prevUsers = queryClient.getQueryData(usersKeys.all);
+    //   queryClient.setQueryData(usersKeys.all as any, (old: any) => [
+    //     ...old,
+    //     newUser,
+    //   ]);
 
-      return { prevUsers };
-    },
+    //   return { prevUsers };
+    // },
     onError: (err, newUser, context) => {},
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: usersKeys.all });

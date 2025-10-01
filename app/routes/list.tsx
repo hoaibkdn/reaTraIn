@@ -9,7 +9,9 @@ import {
   useImperativeHandle,
   useTransition,
   useDeferredValue,
+  useMemo,
 } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   List as VirtualizedList,
   CellMeasurer,
@@ -18,7 +20,7 @@ import {
   InfiniteLoader,
 } from "react-virtualized";
 import LazyImage from "../components/LazyImage";
-import { useUsers } from "~/hooks/useUsers";
+import { useProducts } from "~/hooks/useProducts";
 
 // const initialState = {
 //   count: 0,
@@ -31,53 +33,50 @@ const cache = new CellMeasurerCache({
 });
 
 const List = () => {
-  const [list, setList] = useState<any[]>([]);
-  // const [state, dispatch] = useReducer(reducer, initialState, init);
   const [query, setQuery] = useState("");
-  const [filtered, setFiltered] = useState(list);
   const [isPending, startTransition] = useTransition();
-  const [users, setUsers] = useState<any[]>([]);
-  const [hasMore, setHasMore] = useState(true);
-  const [countLimit, setCountLimit] = useState(1);
-  const { data, error, isLoading } = useUsers();
-  console.log("data users ", data);
+  
+  // Fetch products data using useInfiniteQuery
+  const { 
+    data: productsData, 
+    error: productsError, 
+    isLoading: productsLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage
+  } = useProducts(20)
+  console.log("productsData ", productsData);
+
+  // Fetch users data using useQuery
+  const { 
+    data: usersData, 
+    error: usersError, 
+    isLoading: usersLoading 
+  } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const response = await fetch("https://dummyjson.com/users?limit=200");
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      return response.json();
+    },
+  });
+
+  const list = useMemo(() => 
+    productsData?.pages.flatMap((page) => page.products) || [], 
+    [productsData]
+  );
+  const users = usersData?.users || [];
+  const [filtered, setFiltered] = useState(list);
   // const deferredQuery = useDeferredValue(query);
+  const isRowLoaded = useCallback(({ index }: { index: number }) => !!filtered[index], [filtered]);
 
-  // const [rows, setRows] = useState(
-  //   Array(10)
-  //     .fill()
-  //     .map((_, i) => `Item #${i}`)
-  // );
-
-  const isRowLoaded = ({ index }: { index: number }) => !!filtered[index];
-
-  const loadMoreRows = async ({
-    startIndex,
-    stopIndex,
-  }: {
-    startIndex: number;
-    stopIndex: number;
-  }) => {
-    if (!hasMore) return;
-
-    const skip = startIndex; // API uses skip param for paging
-    // const limit = 20;
-
-    const res = await fetch(
-      `https://dummyjson.com/products?limit=${20 * countLimit}&skip=${skip}`
-    );
-    const data = await res.json();
-    console.log("data products loadmore ", data.products);
-    setCountLimit(countLimit + 1);
-
-    setFiltered(() => data.products);
-
-    setHasMore(true);
-    // stop loading when no more data
-    // if (skip + data.products.length >= data.total) {
-    //   setHasMore(false);
-    // }
-  };
+  const loadMoreRows = useCallback(async () => {
+    if (!hasNextPage || isFetchingNextPage) return Promise.resolve();
+    
+    return fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const listRef = useRef(null);
   const [scrollIndex, setScrollIndex] = useState<number | null>(null);
@@ -101,37 +100,16 @@ const List = () => {
   const itemsRef = useRef<HTMLDivElement[]>([]);
   const modalRef = useRef<{ open: () => void; close: () => void }>(null);
 
+  // Update filtered list when products data changes
   useEffect(() => {
-    async function fetchList() {
-      const fetch1 = fetch(
-        "https://dummyjson.com/products?limit=" + 10 * countLimit
-      );
-      const fetch2 = fetch("https://dummyjson.com/users?limit=200");
-      setCountLimit(countLimit + 1);
-      const response = await fetch1;
-      const response2 = await fetch2;
-
-      const data = await response.json();
-      const data2 = await response2.json();
-      const newList = [...data.products];
-      console.log("newList ", newList.length);
-      setList(newList);
-      setUsers(data2.users);
-      setFiltered(newList);
+    if (list.length > 0) {
+      setFiltered(list);
     }
-    fetchList();
-  }, []);
-  const fetchList = async () => {
-    const response = await fetch("https://dummyjson.com/products?limit=20");
-    const data = await response.json();
-    setList((prev: any[]) => [
-      ...prev,
-      ...(data.products?.slice(10, 20) || []),
-    ]);
-  };
-
-  const handleFetchList = async () => {
-    await fetchList();
+  }, [list.length]);
+  const handleFetchList = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
   };
 
   const scrollToItem = (index: number) => {
@@ -147,9 +125,19 @@ const List = () => {
     };
   }, []);
 
+  // Show loading state
+  if (productsLoading || usersLoading) {
+    return <div>Loading...</div>;
+  }
+
+  // Show error state
+  if (productsError || usersError) {
+    return <div>Error loading data: {productsError?.message || usersError?.message}</div>;
+  }
+
   return (
     <div className="flex flex-col items-center justify-center gap-2">
-      <button onClick={() => setUsers([])}>Search</button>
+      <button onClick={handleFetchList}>Load More Products</button>
       <button
         className="border-2 border-gray-300 p-2 rounded-md"
         onClick={() => setScrollIndex(15)}
@@ -161,12 +149,13 @@ const List = () => {
         onChange={handleChange}
         className="border-2 border-gray-300 p-2 rounded-md"
       />
-      {isPending && <p>Loading...</p>}
+      {isFetchingNextPage ? 'Loading...' : hasNextPage ? 'Load more' : 'No more'}
+      {isPending && <p>Filtering...</p>}
       <InfiniteLoader
         isRowLoaded={isRowLoaded}
         loadMoreRows={loadMoreRows}
-        rowCount={1000}
-        minimumBatchSize={3}
+        rowCount={hasNextPage ? filtered.length + 1 : filtered.length}
+        minimumBatchSize={1}
         threshold={1}
       >
         {({ onRowsRendered, registerChild }) => (
