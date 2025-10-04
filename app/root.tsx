@@ -6,7 +6,12 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import { HydrationBoundary, QueryClient, QueryClientProvider , dehydrate} from "@tanstack/react-query";
+import {
+  HydrationBoundary,
+  QueryClient,
+  QueryClientProvider,
+  dehydrate,
+} from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { persistQueryClient } from "@tanstack/react-query-persist-client";
 
@@ -14,7 +19,6 @@ import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persi
 
 import type { Route } from "./+types/root";
 import "./app.css";
-
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -39,6 +43,7 @@ const queryClient = new QueryClient({
   },
 });
 
+// TODO: why persister cause issue of infinite loop in list page?
 // Only create persister on client side
 let localStoragePersister: any = null;
 
@@ -61,13 +66,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta /> 
+        <Meta />
         <Links />
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
-        <HydrationBoundary state={dehydratedState}>
-          {children}
+          <HydrationBoundary state={dehydratedState}>
+            {children}
           </HydrationBoundary>
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>

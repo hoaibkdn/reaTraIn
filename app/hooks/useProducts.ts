@@ -6,17 +6,17 @@ import { fetchUsers } from "~/api/user";
 export const useProducts = (pageSize: number = 20) => {
   return useInfiniteQuery({
     queryKey: ["products"],
-    queryFn: ({ pageParam = 0 }) => fetchProducts(pageSize, pageParam),
+    queryFn: ({ pageParam }) => fetchProducts(pageParam),
     getNextPageParam: (lastPage, allPages) => {
-      const totalLoaded = allPages.length * pageSize;
+      const totalLoaded = (allPages?.length || 0) * pageSize;
       const totalAvailable = lastPage.total || 0;
       if (totalLoaded >= totalAvailable) {
         return undefined;
       }
-      if (lastPage.products.length < pageSize) {
+      if (lastPage.products?.length < pageSize) {
         return undefined;
       }
-      return allPages.length * pageSize;
+      return totalLoaded + pageSize;
     },
     initialPageParam: 0,
   });

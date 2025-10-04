@@ -45,7 +45,6 @@ const List = () => {
     hasNextPage,
     fetchNextPage
   } = useProducts(20)
-  console.log("productsData ", productsData);
 
   // Fetch users data using useQuery
   const { 
