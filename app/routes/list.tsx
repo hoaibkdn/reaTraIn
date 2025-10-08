@@ -21,6 +21,7 @@ import {
 } from "react-virtualized";
 import LazyImage from "../components/LazyImage";
 import { useProducts } from "~/hooks/useProducts";
+import useProductsStore from "~/stores/useProductsStore";
 
 // const initialState = {
 //   count: 0,
@@ -45,6 +46,7 @@ const List = () => {
     hasNextPage,
     fetchNextPage
   } = useProducts(20)
+  const { products, setProducts } = useProductsStore();
 
   // Fetch users data using useQuery
   const { 
@@ -67,9 +69,12 @@ const List = () => {
     [productsData]
   );
   const users = usersData?.users || [];
-  const [filtered, setFiltered] = useState(list);
+
+  // setProducts(list);
+  // const [filtered, setFiltered] = useState(list);
   // const deferredQuery = useDeferredValue(query);
-  const isRowLoaded = useCallback(({ index }: { index: number }) => !!filtered[index], [filtered]);
+  // const isRowLoaded = useCallback(({ index }: { index: number }) => !!filtered[index], [filtered]);
+  const isRowLoaded = useCallback(({ index }: { index: number }) => !!products[index], [products]);
 
   const loadMoreRows = useCallback(async () => {
     if (!hasNextPage || isFetchingNextPage) return Promise.resolve();
@@ -88,7 +93,8 @@ const List = () => {
       const results = list.filter((item: any) =>
         item.description.toLowerCase().includes(value.toLowerCase())
       );
-      setFiltered(results);
+      // setProducts(results);
+      // setFiltered(results);
     });
   };
 
@@ -102,7 +108,7 @@ const List = () => {
   // Update filtered list when products data changes
   useEffect(() => {
     if (list.length > 0) {
-      setFiltered(list);
+      setProducts(list);
     }
   }, [list.length]);
   const handleFetchList = () => {
@@ -153,7 +159,7 @@ const List = () => {
       <InfiniteLoader
         isRowLoaded={isRowLoaded}
         loadMoreRows={loadMoreRows}
-        rowCount={hasNextPage ? filtered.length + 1 : filtered.length}
+        rowCount={hasNextPage ? products.length + 1 : products.length}
         minimumBatchSize={1}
         threshold={1}
       >
@@ -168,13 +174,13 @@ const List = () => {
                   height={height}
                   scrollTop={scrollTop}
                   isScrolling={isScrolling}
-                  rowCount={filtered.length}
+                  rowCount={products.length}
                   rowHeight={cache.rowHeight}
                   deferredMeasurementCache={cache}
                   overscanRowCount={1}
                   onRowsRendered={onRowsRendered}
                   rowRenderer={({ index, key, style, parent }) => {
-                    const item = filtered[index];
+                    const item = products[index];
                     return (
                       <CellMeasurer
                         key={key}
@@ -187,7 +193,7 @@ const List = () => {
                           <div key={key} style={style}>
                             {item ? (
                               <Item
-                                item={filtered[index]}
+                                item={products[index]}
                                 itemRef={setItemRef(index)}
                                 user={users[index]}
                                 measure={measure}

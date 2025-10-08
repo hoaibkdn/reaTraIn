@@ -19,6 +19,10 @@ import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persi
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { subscribeProducts } from "./hooks/useProducts";
+import { useEffect } from "react";
+
+import useProductsStore from "./stores/useProductsStore";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -37,8 +41,8 @@ export const links: Route.LinksFunction = () => [
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      staleTime: 1000, // 5 minutes
+      refetchOnWindowFocus: true,
     },
   },
 });
@@ -47,20 +51,24 @@ const queryClient = new QueryClient({
 // Only create persister on client side
 let localStoragePersister: any = null;
 
-if (typeof window !== "undefined") {
-  localStoragePersister = createAsyncStoragePersister({
-    storage: window.localStorage,
-  });
+// if (typeof window !== "undefined") {
+//   localStoragePersister = createAsyncStoragePersister({
+//     storage: window.localStorage,
+//   });
 
-  persistQueryClient({
-    queryClient,
-    persister: localStoragePersister,
-    maxAge: 1000 * 60 * 60,
-  });
-}
+//   persistQueryClient({
+//     queryClient,
+//     persister: localStoragePersister,
+//     maxAge: 1000,
+//   });
+// }
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const dehydratedState = dehydrate(queryClient);
+  useEffect(() => {
+    const unsubscribe = subscribeProducts(queryClient)
+    return () => unsubscribe?.()
+  }, [])
   return (
     <html lang="en">
       <head>

@@ -1,7 +1,7 @@
 import { apiProducts } from ".";
 
-const fetchProducts = async (limit: number) => {
-    const { data } = await apiProducts.get(`/products?limit=${limit}`);
+const fetchProducts = async (offset: number = 0, limit: number = 20) => {
+    const { data } = await apiProducts.get(`/products?skip=${offset}&limit=${limit}`);
     return data;
 }
 

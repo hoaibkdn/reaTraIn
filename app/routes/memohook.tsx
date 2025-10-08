@@ -1,11 +1,17 @@
 import { memo, useCallback, useMemo, useState, useId } from "react";
 import useCounterStore from "~/stores/useCounter";
+import { useShallow } from "zustand/shallow";
+import isEqual from "lodash/isEqual";
 
 const MemoHook = () => {
-  // const [count, setCount] = useState(0);
-  const counter = useCounterStore() as { increment: () => void; count: number };
+  const counter = useCounterStore(
+    useShallow((state) => ({
+      count: state?.count ?? 0,
+      ready: state?.ready ?? false,
+    }))
+  );
 
-  // console.log("count ", count);
+  // console.log("count ", counter.count);
   const id = useId();
   const item1 = useMemo(() => ({ id: 1, name: "Item 1" }), []);
   const item2 = useMemo(() => ({ id: 2, name: "Item 2" }), []);
